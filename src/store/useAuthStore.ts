@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { User, onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
+import type { User } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 
 interface AuthState {
@@ -12,7 +13,7 @@ interface AuthState {
 
 // In a real app, you might check a Firestore role or custom claim.
 // For simplicity, we'll check if the email matches a specific admin email.
-const ADMIN_EMAIL = 'admin@radiofreedungog.com';
+const ADMIN_EMAIL = 'vomoir@gmail.com';
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,

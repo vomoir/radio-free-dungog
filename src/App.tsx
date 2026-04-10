@@ -7,7 +7,8 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider } from './lib/firebase';
 import { useAuthStore } from './store/useAuthStore';
-import { useMessageStore, initMessageListener, MessageType } from './store/useMessageStore';
+import { useMessageStore, initMessageListener } from './store/useMessageStore';
+import type { MessageType } from './store/useMessageStore';
 import { LogOut, Send, Music, HelpCircle, MessageSquare, Trash2, ShieldOff, Radio } from 'lucide-react';
 import './App.css';
 
