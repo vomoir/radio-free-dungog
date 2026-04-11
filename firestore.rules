@@ -1,0 +1,21 @@
+service cloud.firestore {
+   match /databases/{database}/documents {
+
+	 // Allow any signed-in user to read and create messages
+	 match /messages/{messageId} {
+	   allow read: if request.auth != null;
+
+	   // We check: 1. User is logged in, 2. They aren't in the blocked list
+	  allow create: if request.auth != null
+					&& !exists(/databases/$(database)/documents/blocked_users/$(request.auth.uid));
+
+	  // ONLY allow deletion if the user is the admin (Update this email to YOURS)
+	  allow delete: if request.auth != null && request.auth.token.email == 'vomoir@gmail.com';
+	}
+
+	// Only the admin can see and modify the blocked users list
+	match /blocked_users/{userId} {
+	  allow read, write: if request.auth != null && request.auth.token.email == 'vomoir@gmail.com';
+	}
+  }
+}

@@ -8,7 +8,6 @@ import {
   deleteDoc, 
   doc, 
   serverTimestamp,
-  where,
   getDocs,
   setDoc
 } from 'firebase/firestore';
@@ -34,6 +33,7 @@ interface MessageState {
   deleteMessage: (messageId: string) => Promise<void>;
   blockUser: (userId: string) => Promise<void>;
   fetchBlockedUsers: () => Promise<void>;
+  clearAllMessages: () => Promise<void>;
 }
 
 const LOCAL_STORAGE_KEY = 'rfd_interaction_log';
@@ -65,6 +65,12 @@ export const useMessageStore = create<MessageState>((set, get) => ({
 
   deleteMessage: async (messageId) => {
     await deleteDoc(doc(db, 'messages', messageId));
+  },
+
+  clearAllMessages: async () => {
+    const querySnapshot = await getDocs(collection(db, 'messages'));
+    const deletePromises = querySnapshot.docs.map((doc) => deleteDoc(doc.ref));
+    await Promise.all(deletePromises);
   },
 
   blockUser: async (userId) => {

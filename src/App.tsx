@@ -9,7 +9,7 @@ import { auth, googleProvider } from './lib/firebase';
 import { useAuthStore } from './store/useAuthStore';
 import { useMessageStore, initMessageListener } from './store/useMessageStore';
 import type { MessageType } from './store/useMessageStore';
-import { LogOut, Send, Music, HelpCircle, MessageSquare, Trash2, ShieldOff, Radio } from 'lucide-react';
+import { LogOut, Send, Music, HelpCircle, MessageSquare, Trash2, ShieldOff, Radio, Eye, EyeOff } from 'lucide-react';
 import './App.css';
 
 const App: React.FC = () => {
@@ -20,13 +20,16 @@ const App: React.FC = () => {
     deleteMessage, 
     blockUser, 
     fetchBlockedUsers,
-    blockedUsers 
+    blockedUsers,
+    clearAllMessages
   } = useMessageStore();
   
   const [inputText, setInputText] = useState('');
   const [messageType, setMessageType] = useState<MessageType>('general');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
   const [authError, setAuthError] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -50,21 +53,17 @@ const App: React.FC = () => {
     }
   };
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAuthError('');
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (error: any) {
-      // If user doesn't exist, create them (simple flow for this app)
-      if (error.code === 'auth/user-not-found') {
-        try {
-          await createUserWithEmailAndPassword(auth, email, password);
-        } catch (createErr: any) {
-          setAuthError(createErr.message);
-        }
+      if (isSignUp) {
+        await createUserWithEmailAndPassword(auth, email, password);
       } else {
-        setAuthError(error.message);
+        await signInWithEmailAndPassword(auth, email, password);
       }
+    } catch (error: any) {
+      setAuthError(error.message);
     }
   };
 
@@ -87,11 +86,11 @@ const App: React.FC = () => {
   if (!user) {
     return (
       <div className="login-container">
-        <Radio size={64} color="var(--primary)" style={{ marginBottom: '1rem' }} />
+        <img src="/che_tony.png" alt="Radio Free Dungog" className="login-logo" />
         <h1>Radio Free Dungog</h1>
         <p>Connect with your local host in real-time.</p>
         
-        <form onSubmit={handleEmailLogin} style={{ width: '100%', maxWidth: '300px', marginTop: '2rem' }}>
+        <form onSubmit={handleEmailAuth} style={{ width: '100%', maxWidth: '300px', marginTop: '2rem' }}>
           <input 
             type="email" 
             placeholder="Email" 
@@ -101,16 +100,46 @@ const App: React.FC = () => {
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-          <input 
-            type="password" 
-            placeholder="Password" 
-            className="btn btn-outline"
-            style={{ marginBottom: '1rem', textAlign: 'left' }}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <button type="submit" className="btn btn-primary">Login / Sign Up</button>
+          <div className="password-container" style={{ position: 'relative', width: '100%', marginBottom: '1rem' }}>
+            <input 
+              type={showPassword ? "text" : "password"} 
+              placeholder="Password" 
+              className="btn btn-outline"
+              style={{ textAlign: 'left', marginBottom: 0, paddingRight: '2.5rem' }}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+                position: 'absolute',
+                right: '0.75rem',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                padding: 0
+              }}
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
+          <button type="submit" className="btn btn-primary">
+            {isSignUp ? 'Create Account' : 'Login'}
+          </button>
+          
+          <p 
+            style={{ fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline', marginTop: '0.5rem' }}
+            onClick={() => setIsSignUp(!isSignUp)}
+          >
+            {isSignUp ? 'Already have an account? Login' : 'New here? Create an account'}
+          </p>
         </form>
 
         <div style={{ margin: '1rem 0' }}>OR</div>
@@ -119,7 +148,7 @@ const App: React.FC = () => {
           Sign in with Google
         </button>
         
-        {authError && <p style={{ color: 'var(--danger)', marginTop: '1rem' }}>{authError}</p>}
+        {authError && <p style={{ color: 'var(--danger)', marginTop: '1rem', fontSize: '0.8rem' }}>{authError}</p>}
       </div>
     );
   }
@@ -131,12 +160,27 @@ const App: React.FC = () => {
           <Radio size={24} />
           <strong>Radio Free Dungog</strong>
         </div>
-        <button 
-          onClick={() => signOut(auth)} 
-          style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}
-        >
-          <LogOut size={20} />
-        </button>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          {isAdmin && (
+            <button 
+              onClick={() => {
+                if (window.confirm('Delete all messages? This cannot be undone.')) {
+                  clearAllMessages();
+                }
+              }}
+              style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+              title="Clear All Messages"
+            >
+              <Trash2 size={20} />
+            </button>
+          )}
+          <button 
+            onClick={() => signOut(auth)} 
+            style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}
+          >
+            <LogOut size={20} />
+          </button>
+        </div>
       </header>
 
       <div className="chat-messages">
@@ -157,9 +201,9 @@ const App: React.FC = () => {
               )}
               <div className="message-bubble">
                 <span className="message-type">
-                  {msg.type === 'question' && <HelpCircle size={10} inline />}
-                  {msg.type === 'request' && <Music size={10} inline />}
-                  {msg.type === 'general' && <MessageSquare size={10} inline />}
+                  {msg.type === 'question' && <HelpCircle size={10} />}
+                  {msg.type === 'request' && <Music size={10} />}
+                  {msg.type === 'general' && <MessageSquare size={10} />}
                   {` ${msg.type}`}
                 </span>
                 {!isOwn && <span className="message-sender">{msg.userName}</span>}
