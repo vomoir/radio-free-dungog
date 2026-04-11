@@ -57,7 +57,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       text,
       type,
       userId: user.uid,
-      userName: user.displayName || 'Anonymous',
+      userName: user.displayName || user.email || 'Anonymous',
       userPhoto: user.photoURL || '',
       createdAt: serverTimestamp(),
     });

@@ -32,14 +32,54 @@ const App: React.FC = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [authError, setAuthError] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isInitialLoad = useRef(true);
+
+  // Request notification permission
+  const requestNotificationPermission = async () => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      await Notification.requestPermission();
+    }
+  };
 
   useEffect(() => {
     if (user) {
+      requestNotificationPermission();
+      
       const unsubscribe = initMessageListener();
       fetchBlockedUsers();
+
+      // We need to handle notifications inside the store or a separate effect
+      // but for simplicity, we'll monitor the messages here
       return () => unsubscribe();
     }
   }, [user, fetchBlockedUsers]);
+
+  // Handle Notifications for new messages
+  useEffect(() => {
+    if (messages.length > 0) {
+      if (isInitialLoad.current) {
+        isInitialLoad.current = false;
+        return;
+      }
+
+      const lastMessage = messages[messages.length - 1];
+      
+      // Notify if:
+      // 1. Message is not from current user
+      // 2. Browser supports Notifications and permission is granted
+      // 3. Document is hidden (user is in another app/tab)
+      if (
+        lastMessage.userId !== user?.uid && 
+        Notification.permission === 'granted' &&
+        document.visibilityState !== 'visible'
+      ) {
+        new Notification(`RFD: ${lastMessage.userName}`, {
+          body: lastMessage.text,
+          icon: lastMessage.userPhoto || '/pwa-192x192.png'
+        });
+      }
+    }
+  }, [messages, user?.uid]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
